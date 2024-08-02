@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <link rel="stylesheet" href="stylesheet.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Currency Converter</h1>
+        <div class="converter">
+            <label for="amount">Amount to Convert:</label>
+            <input type="number" id="amount" placeholder="Enter amount" />
+            <br><br>
+            <label for="from">From:</label>
+            <select id="from"></select>
+            
+            <label for="to">To:</label>
+            <select id="to"></select>
+           
+            <button onclick="convert()">Convert</button>
+            
+            <h2>Result:</h2>
+            <span id="result">--</span>
+        </div>
+    </div>
+    <script>
+        const API_URL = 'https://api.exchangerate-api.com/v4/latest/USD';
+
+        async function populateCurrencies() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                const currencies = Object.keys(data.rates);
+
+                const fromSelect = document.getElementById('from');
+                const toSelect = document.getElementById('to');
+
+                fromSelect.innerHTML = '';
+                toSelect.innerHTML = '';
+
+                currencies.forEach(currency => {
+                    const optionFrom = document.createElement('option');
+                    optionFrom.value = currency;
+                    optionFrom.textContent = currency;
+                    fromSelect.appendChild(optionFrom);
+
+                    const optionTo = document.createElement('option');
+                    optionTo.value = currency;
+                    optionTo.textContent = currency;
+                    toSelect.appendChild(optionTo);
+                });
+
+                fromSelect.value = 'USD';
+                toSelect.value = 'EUR';
+
+            } catch (error) {
+                console.error('Error fetching currencies:', error);
+                alert('An error occurred while fetching currencies.');
+            }
+        }
+
+        async function convert() {
+            try {
+                const amount = parseFloat(document.getElementById('amount').value);
+                if (isNaN(amount) || amount <= 0) {
+                    alert('Please enter a valid amount.');
+                    return;
+                }
+
+                const fromCurrency = document.getElementById('from').value;
+                const toCurrency = document.getElementById('to').value;
+
+                if (fromCurrency === toCurrency) {
+                    document.getElementById('result').textContent = `${amount} ${toCurrency}`;
+                    return;
+                }
+
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                if (!data.rates[fromCurrency] || !data.rates[toCurrency]) {
+                    alert('Currency not supported.');
+                    return;
+                }
+
+                const rateFromUSD = data.rates[fromCurrency];
+                const rateToUSD = data.rates[toCurrency];
+                const convertedAmount = (amount / rateFromUSD) * rateToUSD;
+
+                document.getElementById('result').textContent = `${convertedAmount.toFixed(2)} ${toCurrency}`;
+
+            } catch (error) {
+                console.error('Error converting currencies:', error);
+                alert('An error occurred while converting currencies.');
+            }
+        }
+        window.onload = populateCurrencies;
+    </script>
+</body>
+</html>
